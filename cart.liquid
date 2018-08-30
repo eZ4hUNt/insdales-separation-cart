@@ -1,0 +1,329 @@
+{% if cart.items == empty %}
+	<div class="text">
+		<h1>Ваша корзина</h1>
+		<p>В вашей корзине пока пусто.</p>
+	</div>
+{% else %}
+	{% comment %}
+		Входящие параметры для разделения корзины
+	{% endcomment %}
+	{% assign separation_hangle = settings.cart_handle_property %}
+	{% if separation_hangle.size > 0 %}
+		{% assign separation_cart = true %}
+	{% else %}
+		{% assign separation_cart = false %}
+	{% endif %}
+							
+	<form action="/cart_items" id="cartform" class="js-separation-cart" method="post" data-separation-cart="{{ separation_cart }}" data-separation-hangle="{{ separation_hangle }}">
+		<div class="text">
+			<div class="row">
+				<div class="col-lg-8 col-md-7 col-sm-6 col-xs-12">
+					{% if separation_cart == true %}
+						<h1>{% if settings.cart_title.size > 0 %}{{ settings.cart_title }}{% else %}Ваша корзина{% endif %}</h1>
+					{% else %}
+						<h1>Ваша корзина</h1>
+					{% endif %}
+				</div>
+              {% comment %} {% if cart.discounts.size == 0 %}
+				<div class="col-lg-8 col-md-7 col-sm-6 col-xs-12" id="cart-discount-message" style="margin:10px 0px; color: #39a912;">Закажите товары на сумму более 3000 рублей и мы с удовольствием сделаем вам скидку 300 рублей на доставку!
+				</div>  
+              {% endif %} {% endcomment %}
+				<div class="col-lg-4 col-md-5 col-sm-6 col-xs-12 {% if settings.cart_page_type == 'half' %}hidden-lg hidden-md hidden-sm{% endif %}">
+					{% if cart.items.size > 3 %}<button type="submit" name="make_order" class="button-big">Оформить заказ</button>{% endif %}
+				</div>
+			</div>
+		</div>	
+		
+		<div class="cart-page cart-page-{{ settings.cart_page_type }}">
+			<div class="row">
+				<div class="{% if settings.cart_page_type == 'half' %}{% if separation_cart == true %}col-lg-12 col-md-12{% else %}col-lg-9 col-md-8{% endif %} {% endif %}col-xs-12 cart-col-left">
+					<div class="cart-table js-cart-table">
+						<input type="hidden" value="put" name="_method">
+						{% capture 'cart_items' %}{% for item in cart.items %}{{ item.product.id }} {% endfor %}{% endcapture %}
+						{% for item in cart.items %}
+							{% if item.product.related_products.size > 0 %}{% assign cart_items_hasrelated = true %}{% endif %}
+							<div class="js-cart-item-sep" data-separation-name="{{ item.product.properties[separation_hangle].characteristics.first.name }}">
+								<div class="cart-item js-cart-item" id="cart-item-{{ item.id }}" data-item-id="{{ item.id }}" data-item-total-price="{{ item.total_price }}">
+									<div class="row">
+										<div class="col-lg-2 col-md-2 col-sm-3 col-xs-4">
+											<a href="{{ item.product.canonical_url }}" title="{{ item.title | escape }}" class="cart-item-thumb"><img src="{{ item.image.large_url }}" class="img-responsive"></a>
+										</div>
+										<div class="col-lg-10 col-md-10 col-sm-9 col-xs-8">
+											<div class="row">
+												<div class="col-lg-6 col-md-{% if settings.cart_page_type == 'half' %}5{% else %}7{% endif %} col-sm-12 col-xs-12 cart-item-title">
+													<a href="{{ item.product.canonical_url }}" class="link-alt">{{ item.product.title }}</a>{% if item.variant.title != '' %}{% for option in item.variant.option_values %}<span class="cart-item-variant">{{ option.option_name.title }}: {{ option.title }}</span>{% endfor %}{% endif %}
+													{% if item.product.is_bundle %}
+														<ul>
+															{% for bundle_component in item.product.bundle_components %}
+																<li><span>{{ bundle_component.quantity | round: 0 }} &times; </span>{{ bundle_component.product.title }}</li>
+															{% endfor %}
+														</ul>
+													{% endif %}
+												</div>
+												<div class="col-lg-3 col-md-{% if settings.cart_page_type == 'half' %}3{% else %}2{% endif %} col-sm-12 col-xs-12 cart-item-price">
+													<span class="cart-item-quantity-{{ item.id }}">{{ item.quantity }}</span> &times; <span class="cart-item-price-{{ item.id }}">{{ item.sale_price | money }}</span>
+													<p><strong class="cart-item-total-price-{{ item.id }}">{{ item.total_price | money }}</strong></p>
+												</div>
+												<div class="col-lg-3 col-md-{% if settings.cart_page_type == 'half' %}4{% else %}3{% endif %} col-sm-12 col-xs-12">
+													<div class="item-quantity pull-left clearfix">
+														<button class="js-cart-item-count cart-item-count item-quantity-minus" data-id="{{ item.id }}" data-action="minus"><i class="ion ion-ios-minus-empty"></i></button><input type="number" value="{{ item.quantity }}" name="cart[quantity][{{ item.id }}]" id="item-quantity-{{ item.id }}" class="input-medium cart-item-quantity-input-{{ item.id }} js-cart-item-quantity-input cart-item-quantity-input" data-price="{{ item.sale_price }}" data-id="{{ item.id }}" min="1" max="{{ item.variant.quantity }}"><button class="js-cart-item-count cart-item-count item-quantity-plus" data-id="{{ item.id }}" data-action="plus"><i class="ion ion-ios-plus-empty"></i></button>
+													</div>
+													<button data-id="{{ item.id }}" title="Удалить из корзины" class="pull-right cart-item-delete js-cart-item-delete"><i class="ion ion-ios-close-empty"></i></button>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						{% endfor %}
+					</div>
+				</div>
+				{% if separation_cart != true %}
+				<div class="{% if settings.cart_page_type == 'half' %}col-lg-3 col-md-4 sticky-column {% endif %}col-xs-12 cart-col-right">
+					<div class="row cart-footer">
+						{% if cart.enable_coupon? %}
+							<div class="{% if settings.cart_page_type != 'half' %}col-lg-4 col-md-4 col-sm-6 {% endif %}col-xs-12 cart-coupon">
+								<label for="cart-coupon">Купон на скидку или подарочная карта</label>
+								<table>
+									<tr>
+										<td><input type="text" value="{{ cart.coupon }}" id="cart-coupon" name="cart[coupon]" class="{% if cart.invalid_coupon? %}input-error{% endif %}"></td>
+										<th><a href="#" class="button button-bordered cart-coupon-check">Применить</a></th>
+									</tr>
+								</table>
+								{% if cart.invalid_coupon? %}<p class="form-alert text-red"><i class="fa fa-exclamation-triangle fa-lg"></i>{{cart.coupon_error}}</p>{% endif %}
+							</div>
+							{% if settings.cart_page_type != 'half' %}<div class="col-xs-12 hidden-lg hidden-md clearfix"></div>{% endif %}
+						{% endif %}
+						<div class="{% if settings.cart_page_type != 'half' %}col-lg-4 col-lg-push-4 col-md-4 col-md-push-4 col-sm-6 col-sm-push-6 {% endif %}col-xs-12 cart-create-order">
+							<p>Итого: <strong id="cart-items-price">{{ cart.items_price | money }}</strong></p>
+							<p class="cart-discounts"{% if cart.discounts.size == 0 %} style="display: none;"{% endif %}>В т.ч. скидка: <strong>{{ cart.discounts[0].amount | money }}</strong><span>{{ cart.discounts[0].description }}</span></p>
+							<button type="submit" name="make_order" class="button-big">Оформить заказ</button>
+						</div>
+                        {% if account.quick_checkout.enabled %}
+						{% if settings.cart_page_type == 'half' %}<div class="col-xs-12 hidden-lg hidden-md visible-sm hidden-xs clearfix"></div>{% endif %}
+						<div class="{% if settings.cart_page_type != 'half' %}col-lg-4 col-lg-pull-4 col-md-4 col-md-pull-4 col-sm-6 col-sm-pull-6 {% endif %}col-xs-12 cart-fastorder">
+                         
+							<div class="form js-fast-form">
+								<p class="center"><strong>Не хотите тратить время на&nbsp;оформление?</strong><br>Оставьте телефон и&nbsp;мы все&nbsp;сделаем за&nbsp;Вас.</p>
+								<input type="hidden" name="client[name]" value="Быстрый заказ" autocomplete="off" class="js-fast-client-name">
+								<input type="hidden" name="client[email]" value="fastorder@{{ account.url | remove: 'https://' | remove: 'http://' | remove: 'www.' }}" autocomplete="off" class="js-fast-client-email">
+								<input type="hidden" name="order[delivery_variant_id]" value="{{ account.delivery_variants[0].id }}">
+								<input type="hidden" name="order[payment_gateway_id]" value="{{ account.payment_gateways[0].id }}">
+								<input type="hidden" name="pid_value" value="1">
+								<label for="client_phone">Контактный телефон <span class="required">*</span></label>
+								<table>
+									<tr>
+										<td><input type="tel" name="client[phone]" value="" autocomplete="off" class="mask-phone input-medium js-form-required js-fast-client-phone"></td>
+										<th><button type="submit" class="button-medium js-fast-form-submit">Отправить</button></th>
+									</tr>
+								</table>
+								<div class="js-fast-form-privacy"></div>
+								<div class="js-fast-status fast-status"></div>
+							</div>
+                          {% endif%}
+						</div>
+					</div>
+				</div>
+				{% endif %}
+			</div>
+		</div>
+	</form>
+	{% if collections.cart.products_count > 0 %}
+		<p class="page-title-extra text-center"><span>Рекомендуем купить</span></p>
+		<div class="products products-scroll">
+			<div class="js-related-products owl-carousel">
+				{% for product in collections.cart.products %}
+					{% capture 'product_id' %}{{ product.id }}{% endcapture %}
+					{% unless cart_items contains product_id %}<div class="item">{% include 'product_small' with template %}</div>{% endunless %}
+				{% endfor %}
+			</div>
+		</div>
+	{% else %}
+		{% if cart_items_hasrelated == true %}
+			<p class="page-title-extra text-center"><span>Рекомендуем купить</span></p>
+			<div class="products products-scroll">
+				<div class="js-related-products owl-carousel">
+					{% assign cart_items_related = '' %}
+					{% for item in cart.items %}
+						{% for product in item.product.related_products %}
+							{% capture 'product_id' %}{{ product.id }}{% endcapture %}
+							{% unless cart_items_related contains product_id %}
+								{% capture 'cart_items_related' %}{{ cart_items_related }}{{ product.id }} {% endcapture %}
+								{% unless cart_items contains product_id %}<div class="item">{% include 'product_small' with template %}</div>{% endunless %}
+							{% endunless %}
+						{% endfor %}
+					{% endfor %}
+				</div>
+			</div>
+		{% endif %}
+	{% endif %}
+{% endif %}
+{% if cart.items == empty %}
+	{% if collections.cart.products_count > 0 %}
+		<p class="page-title-extra text-center"><span>Рекомендуем купить</span></p>
+		<div class="products products-scroll">
+			<div class="js-related-products owl-carousel">
+				{% for product in collections.cart.products %}
+					{% capture 'product_id' %}{{ product.id }}{% endcapture %}
+					{% unless cart_items contains product_id %}<div class="item">{% include 'product_small' with template %}</div>{% endunless %}
+				{% endfor %}
+			</div>
+		</div>
+	{% endif %}
+{% endif %}
+
+<script>
+	$(function(){
+		// Входящие параметры
+			var separation_cart = $('.js-separation-cart').data('separation-cart');
+			var separation_hangle = $('.js-separation-cart').data('separation-hangle');
+			
+		// Разделяем корзину
+			if(separation_cart == true){
+				// Собираем товар в массив
+					$('.js-cart-table').before('<div class="js-cart-table-separated"></div>');
+					var cart_items_arr = {};
+					var cart_items_price_arr = [];
+					$(".js-cart-item-sep").each(function(index) {
+						var separation_name = $(this).data('separation-name');
+						if(cart_items_arr[separation_name]){
+							cart_items_arr[separation_name] += $(this).html();
+						}else{
+							cart_items_arr[separation_name] = $(this).html();
+						}
+						
+						// Общая стоимость блока покупок
+							if(cart_items_price_arr[separation_name]){
+								cart_items_price_arr[separation_name] = Number(cart_items_price_arr[separation_name]) + Number($(this).find('.cart-item').data('item-total-price'));
+							}else{
+								cart_items_price_arr[separation_name] = Number($(this).find('.cart-item').data('item-total-price'));
+							}
+					});
+					
+
+				// Собираем блоки разделенной корзины
+					$.each(cart_items_arr, function(index, value) {
+						var separated_item_info =  '<div class="cart-create-order separaded-cart-create-order">';
+							separated_item_info += '<p>Итого: <strong class="js-separated-price">'+ InSales.formatMoney(cart_items_price_arr[index], cv_currency_format) +'</strong></p>';
+							separated_item_info += '<p class="cart-discounts" style="display: none;">В т.ч. скидка: <strong></strong><span></span></p>';
+							separated_item_info += '<button class="button-big js-make-order" data-buy-separated-id="'+ index +'">Оформить заказ</button>';
+							separated_item_info += '</div>';
+						$('.js-cart-table-separated').append('<div id="#separated_'+index+'" class="separated_item" data-separation-name="'+ index +'" data-separated-total-price="'+ cart_items_price_arr[index] +'">'+ value + separated_item_info +'</div>');
+						
+					});
+
+				// Сортируем блоки по цене
+					var div_conteiner = jQuery.makeArray($('.js-cart-table-separated .separated_item'));
+					div_conteiner.sort(function f(b, a) {
+						a = $(a).data('separated-total-price');
+						b = $(b).data('separated-total-price');
+						var c = 0
+						if (a > b) c = 1;
+						if (a < b) c = -1;
+						return c
+					});
+					$.map(div_conteiner, function (div) {
+						$(div).appendTo($('.js-cart-table-separated'))
+					});	
+					
+				// Оформляем заказ
+              		function separation_cart_make_order(data, buy_separated_id){
+						var cache_products;
+                        // Создаем строку с товарами, которые необходимо добавить в куки и удаляем товар из корзины
+							var delete_cart_items_serialize;
+							$(data.order.order_lines).each(function(index,order_line) {
+								if(order_line.comment != buy_separated_id){ // Все товары, кроме тех, которые отправляем в чекаут
+									// Строка товаров, которые необходимо добавить в куки
+                                	console.log(order_line);
+									if(order_line.comment == ''){
+										var separated_id = 'all';
+									}else{
+										var separated_id = order_line.comment;
+									}
+									if(cache_products){
+										cache_products = cache_products + ',' + order_line.variant_id + ':' + order_line.quantity + ':' + separated_id;
+									}else{
+										cache_products = order_line.variant_id + ':' + order_line.quantity + ':' + separated_id;
+									}
+
+									if(delete_cart_items_serialize){
+										delete_cart_items_serialize = 'cart[quantity]['+ order_line.variant_id +']=0&' + delete_cart_items_serialize;
+									}else{
+										delete_cart_items_serialize = 'cart[quantity]['+ order_line.variant_id +']=0';
+									}
+								}
+							});
+
+						// Добавляем товары в куки
+							if(cache_products){
+								$.cookie('js-separation-cart-items', cache_products, {
+									path: '/',
+									expires: 365
+								});
+							}
+						   
+							$.cookie('js-separation-cart', 'true', {
+								path: '/',
+								expires: 365
+							});
+
+						// Удаляем из корзины
+							$.post('/cart_items.json', delete_cart_items_serialize)
+								.done(function (cart) {
+									// Перенаправляем на страницу чекаута
+										document.location.href="/new_order";
+							});
+                    }
+              
+					$('.js-make-order').click(function (e) {
+                      	e.preventDefault();
+                      	var buy_separated_id = $(this).data('buy-separated-id');
+                      	// Для начала перезагружаем корзину
+                            if($.cookie('js-separation-cart') == 'true'){
+                              	var cookie_cart_items = $.cookie('js-separation-cart-items');
+                                var cookie_cart_items_arr = cookie_cart_items.split(',');
+                                var new_cart_items_serialize;
+                                $.each(cookie_cart_items_arr, function(index, value){
+                                    var cookie_cart_item = value.split(':');
+                                    if(new_cart_items_serialize){
+                                        new_cart_items_serialize = 'cart[quantity]['+ cookie_cart_item[0] +']='+ cookie_cart_item[1] +'&cart[order_line_comments]['+ cookie_cart_item[0] +']='+ cookie_cart_item[2] +'&'+ new_cart_items_serialize;
+                                    }else{
+                                        new_cart_items_serialize = 'cart[quantity]['+ cookie_cart_item[0] +']='+ cookie_cart_item[1] +'&cart[order_line_comments]['+ cookie_cart_item[0] +']='+ cookie_cart_item[2];
+                                    }
+                                });
+                              
+                                // Добавляем товары в корзину
+                                    $.post('/cart_items.json', new_cart_items_serialize)
+                                        .done(function (data) {
+                                           separation_cart_make_order(data, buy_separated_id);
+                                    });
+                            }else{
+                                // Товары, которые мы НЕ оформляем в чекаут
+                                // Собираем их в массив и отправляем в куки
+                                // Затем удаляем из корзины
+                                    $.ajax({
+                                        url: '/cart_items.json',
+                                        type: 'POST',
+                                        dataType: 'json',
+                                        success: function(data){
+											separation_cart_make_order(data, buy_separated_id);
+                                        }
+                                    });
+                            }
+					});
+					
+				// Удаление старый блок с товаром, что-бы избежать дублей
+					$('.js-cart-table').remove();
+			}
+	});
+</script>
+
+
+
+
+
+
+
+
+
+
