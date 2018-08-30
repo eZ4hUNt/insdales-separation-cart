@@ -71,72 +71,72 @@
 				
 5. Вешаем функцию *"reestablish_cart()"* на все страницы сайта, кроме чекаута. Вызываем ее на всех этих страницах, а так-же вешаем на на события, когда нужно очистить корзину (напр. добавление нового товара в корзину *"reestablish_cart(false)"*)
 ```
-<script>
-	// Восстанавливаем корзину (Должно срабатывать на всех страницах, кроме чекаута)
-		function reestablish_cart(refresh){
-			var cookie_cart_items = $.cookie('js-separation-cart-items');
-			if($.cookie('js-separation-cart') == 'true'){
-				var cookie_cart_items_arr = cookie_cart_items.split(',');
-				var new_cart_items_serialize;
-				$.each(cookie_cart_items_arr, function(index, value){
-					var cookie_cart_item = value.split(':');
-					if(new_cart_items_serialize){
-						new_cart_items_serialize = 'cart[quantity]['+ cookie_cart_item[0] +']='+ cookie_cart_item[1] +'&cart[order_line_comments]['+ cookie_cart_item[0] +']='+ cookie_cart_item[2] +'&'+ new_cart_items_serialize;
-					}else{
-						new_cart_items_serialize = 'cart[quantity]['+ cookie_cart_item[0] +']='+ cookie_cart_item[1] +'&cart[order_line_comments]['+ cookie_cart_item[0] +']='+ cookie_cart_item[2];
-					}
-				});
-					
-				// Добавляем товары в корзину
-					$.post('/cart_items.json', new_cart_items_serialize).done(function (cart) {
-						console.log(cart);
-						// Удаляем эти товары из куков
-							$.cookie('js-separation-cart-items', '', {
-								path: '/',
-								expires: 365
-							});
-							$.cookie('js-separation-cart', 'false', {
-								path: '/',
-								expires: 365
-							});
-						
-						// Перезагружаем страницу
-							if(refresh == true){
-								location.reload();
-							}
+	<script>
+		// Восстанавливаем корзину (Должно срабатывать на всех страницах, кроме чекаута)
+			function reestablish_cart(refresh){
+				var cookie_cart_items = $.cookie('js-separation-cart-items');
+				if($.cookie('js-separation-cart') == 'true'){
+					var cookie_cart_items_arr = cookie_cart_items.split(',');
+					var new_cart_items_serialize;
+					$.each(cookie_cart_items_arr, function(index, value){
+						var cookie_cart_item = value.split(':');
+						if(new_cart_items_serialize){
+							new_cart_items_serialize = 'cart[quantity]['+ cookie_cart_item[0] +']='+ cookie_cart_item[1] +'&cart[order_line_comments]['+ cookie_cart_item[0] +']='+ cookie_cart_item[2] +'&'+ new_cart_items_serialize;
+						}else{
+							new_cart_items_serialize = 'cart[quantity]['+ cookie_cart_item[0] +']='+ cookie_cart_item[1] +'&cart[order_line_comments]['+ cookie_cart_item[0] +']='+ cookie_cart_item[2];
+						}
 					});
+
+					// Добавляем товары в корзину
+						$.post('/cart_items.json', new_cart_items_serialize).done(function (cart) {
+							console.log(cart);
+							// Удаляем эти товары из куков
+								$.cookie('js-separation-cart-items', '', {
+									path: '/',
+									expires: 365
+								});
+								$.cookie('js-separation-cart', 'false', {
+									path: '/',
+									expires: 365
+								});
+
+							// Перезагружаем страницу
+								if(refresh == true){
+									location.reload();
+								}
+						});
+				}
 			}
-		}
-				
-		if(template != 'checkout'){
-			reestablish_cart(true);
-		}
-</script>
+
+			if(template != 'checkout'){
+				reestablish_cart(true);
+			}
+	</script>
 ```
 	
 6. На страницу чекаута добавляем скрипт
 ```
-{% comment %}
-	Проверка, разделена ли корзина
-{% endcomment %}
-{% assign separation_hangle = settings.cart_handle_property %}
-{% if separation_hangle.size > 0 %}
-	<script>
-		// Проверяем, включен ли режим разделенной корзины
-		// Если включен, то проверяем, разделена ли корзина
-		// Если не разделена, то отправляем в корзину
-			jQuery(document).ready(function($){
-				if(document.location.pathname == '/new_order'){ // Проверка, чекаут или ЛК
-					if($.cookie('js-separation-cart') != 'true'){
-						// Перенаправляем на страницу чекаута
-							document.location.href="/cart_items";
+	{% comment %}
+		Проверка, разделена ли корзина
+	{% endcomment %}
+	{% assign separation_hangle = settings.cart_handle_property %}
+	{% if separation_hangle.size > 0 %}
+		<script>
+			// Проверяем, включен ли режим разделенной корзины
+			// Если включен, то проверяем, разделена ли корзина
+			// Если не разделена, то отправляем в корзину
+				jQuery(document).ready(function($){
+					if(document.location.pathname == '/new_order'){ // Проверка, чекаут или ЛК
+						if($.cookie('js-separation-cart') != 'true'){
+							// Перенаправляем на страницу чекаута
+								document.location.href="/cart_items";
+						}
+					}else{
+						reestablish_cart(true);
 					}
-				}else{
-					reestablish_cart(true);
-				}
-			});
-	</script>
-{% endif %}
+				});
+		</script>
+	{% endif %}
 ```
 
 ## Сам скрипт и пример на GitHub
