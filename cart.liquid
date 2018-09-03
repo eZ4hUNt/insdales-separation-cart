@@ -303,10 +303,10 @@
                                 // Затем удаляем из корзины
                                     $.ajax({
                                         url: '/cart_items.json',
-                                        type: 'POST',
+                                        type: 'GET',
                                         dataType: 'json',
                                         success: function(data){
-											separation_cart_make_order(data, buy_separated_id);
+						separation_cart_make_order(data, buy_separated_id);
                                         }
                                     });
                             }
