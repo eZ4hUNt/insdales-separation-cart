@@ -169,4 +169,4 @@
 ## Сам скрипт и пример на GitHub
 https://github.com/eZ4hUNt/insdales-separation-cart
 
-Пример: http://west.shop
+Пример: http://streinwear.com/
